@@ -12,13 +12,14 @@
 <ion-content padding class="details">
     <ion-list inset>
         <ion-item>
-            <ion-label>Name</ion-label>
-            <ion-input type="text" [(ngModel)]="birthday.Name"></ion-input>
+          <ion-label>Birthday</ion-label>
+          <ion-datetime displayFormat="MMMM D, YYYY HH:mm" pickerFormat="MMMM D YYYY HH:mm" [(ngModel)]="isoDate"></ion-datetime>
         </ion-item>
         <ion-item>
-            <ion-label>Birthday</ion-label>
-            <ion-datetime displayFormat="MMMM D, YYYY" pickerFormat="MMMM D YYYY" [(ngModel)]="isoDate"></ion-datetime>
+           <ion-label floating>Your dairy thoughts...</ion-label>
+           <ion-textarea [(ngModel)]="dairyEntry.content"></ion-textarea>
         </ion-item>
+        <ion-item><tag-input [(ngModel)]='dairyEntry.tags' [autocomplete]='true' [autocompleteItems]="['Item1', 'item2', 'item3']"></tag-input></ion-item>
     </ion-list>
     <button block (click)="save()">Save</button>
 </ion-content>

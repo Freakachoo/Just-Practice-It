@@ -1,6 +1,6 @@
 import {Component, NgZone} from "@angular/core";
-import {Modal, NavController, Platform, ModalController} from 'ionic-angular';
-import {BirthdayService} from '../../app/services/birthday.service';
+import {NavController, Platform, ModalController} from 'ionic-angular';
+import {StorageService} from '../../app/services/storage.service'
 import {DetailsPage} from '../details/details';
 
 @Component({
@@ -8,9 +8,10 @@ import {DetailsPage} from '../details/details';
   templateUrl: 'home.html'
 })
 export class HomePage {
-    public birthdays = [];
+    public dairy = []
+    public col
 
-    constructor(private birthdayService: BirthdayService,
+    constructor(public StorageService: StorageService,
         private nav: NavController,
         private platform: Platform,
         private zone: NgZone,
@@ -20,24 +21,25 @@ export class HomePage {
 
     ionViewDidLoad() {
         this.platform.ready().then(() => {
-            this.birthdayService.initDB();
-
-            this.birthdayService.getAll()
-                .then(data => {
+            this.StorageService.initDB('just_practice_it')
+            this.col = this.StorageService.collection
+            this.StorageService.models.Dairy.getAll()
+              .then(data => {
                     this.zone.run(() => {
-                        this.birthdays = data;
-                    });
+                        this.dairy = data.docs
+                    })
                 })
-                .catch(console.error.bind(console));
+                .catch(console.error.bind(console))
         });
     }
 
-    showDetail(birthday) {
-        let modal = this.modalCtrl.create(DetailsPage, { birthday: birthday });
-        modal.present();
-
-        // modal.onDismiss(() => {
-        //
-        // });
+    showDetail(dairyEntry) {
+        let modal = this.modalCtrl.create(DetailsPage, { dairyEntry: dairyEntry })
+        modal.present()
+        modal.onDidDismiss(() => {
+          console.log(this.StorageService.collection)
+          // this.col = this.StorageService.collection
+          // this.col = '22222'
+        })
     }
 }

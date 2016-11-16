@@ -1,9 +1,10 @@
-import { NgModule } from '@angular/core';
-import { IonicApp, IonicModule } from 'ionic-angular';
-import { MyApp } from './app.component';
-import { HomePage } from '../pages/home/home';
-import { DetailsPage } from '../pages/details/details';
-import { BirthdayService } from './services/birthday.service';
+import { NgModule } from '@angular/core'
+import { IonicApp, IonicModule } from 'ionic-angular'
+import { MyApp } from './app.component'
+import { HomePage } from '../pages/home/home'
+import { DetailsPage } from '../pages/details/details'
+import { StorageService } from './services/storage.service'
+import { TagInputModule } from 'ng2-tag-input'
 
 @NgModule({
   declarations: [
@@ -12,7 +13,8 @@ import { BirthdayService } from './services/birthday.service';
     DetailsPage
   ],
   imports: [
-    IonicModule.forRoot(MyApp)
+    IonicModule.forRoot(MyApp),
+    TagInputModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [
@@ -20,6 +22,6 @@ import { BirthdayService } from './services/birthday.service';
     HomePage,
     DetailsPage
   ],
-  providers: [BirthdayService]
+  providers: [StorageService]
 })
 export class AppModule {}

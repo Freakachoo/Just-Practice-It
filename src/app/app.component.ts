@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Platform } from 'ionic-angular';
 import { StatusBar, Splashscreen } from 'ionic-native';
-import {BirthdayService} from './services/birthday.service';
+import { StorageService } from './services/storage.service';
 
 import { HomePage } from '../pages/home/home';
 

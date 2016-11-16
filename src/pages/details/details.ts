@@ -1,67 +1,56 @@
+
 import {Component} from '@angular/core';
-import {Modal, NavParams, ViewController} from 'ionic-angular';
-import {BirthdayService} from '../../app/services/birthday.service';
+import {NavParams, ViewController} from 'ionic-angular';
+import moment from 'moment'
+
+import {StorageService} from '../../app/services/storage.service';
 
 @Component({
   selector: 'page-details',
   templateUrl: 'details.html',
 })
 export class DetailsPage {
-    public birthday;
     public isNew = true;
     public action = 'Add';
-    public isoDate = '';
+    public isoDate
+    public dairyEntry
 
     constructor(private viewCtrl: ViewController,
         private navParams: NavParams,
-        private birthdayService: BirthdayService) {
-        this.birthday = this.navParams.get('birthday');
-        if (!this.birthday) {
-            console.log('=====4')
-            this.birthday = {Name: ''};
+        private StorageService: StorageService) {
+        this.dairyEntry = this.navParams.get('dairyEntry')
+        console.log(this.dairyEntry)
+        if (!this.dairyEntry) {
+            this.dairyEntry = {content: '', tags: [], date: moment.utc().toISOString()}
+        } else {
+          this.isNew = false
         }
     }
 
     ionViewDidLoad() {
-        console.log('====1')
-        this.birthday = this.navParams.get('birthday');
-
-        if (!this.birthday) {
-            this.birthday = {Name: ''};
-        }
-        else {
-            this.isNew = false;
-            this.action = 'Edit';
-            this.isoDate = this.birthday.Date.toISOString().slice(0, 10);
+        if (this.dairyEntry.date) {
+          this.isoDate = moment(this.dairyEntry.date).local().format('YYYY-MM-DDTHH:mm')
         }
     }
 
     save() {
-        console.log('=====5')
-        this.birthday.Date = new Date(this.isoDate);
+        this.dairyEntry.date = moment(this.isoDate).utc().toISOString()
 
-        if (this.isNew) {
-          console.log('=====6')
-            this.birthdayService.add(this.birthday)
-                .catch(console.error.bind(console));
-        } else {
-          console.log('=====7')
-            this.birthdayService.update(this.birthday)
-                .catch(console.error.bind(console));
-        }
-
-        console.log('=====7')
-        this.dismiss();
-    }
-
-    delete() {
-        this.birthdayService.delete(this.birthday)
+        this.StorageService.models.Dairy.save(this.dairyEntry)
             .catch(console.error.bind(console));
 
         this.dismiss();
     }
 
+    delete() {
+        this.StorageService.models.Dairy.delete(this.dairyEntry)
+            .catch(console.error.bind(console));
+
+        this.dismiss();
+    }
+
+    // Hide Modal window
     dismiss() {
-        this.viewCtrl.dismiss(this.birthday);
+        this.viewCtrl.dismiss(this.dairyEntry);
     }
 }
