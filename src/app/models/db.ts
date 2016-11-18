@@ -1,27 +1,24 @@
 // Class-abstract with CRUD operations
+import { Injectable } from '@angular/core'
 import {StorageService} from '../../app/services/storage.service'
 
+@Injectable()
 abstract class aDB {
 	protected _db
-	protected _storageService
 	protected _model_name
-	public collection
-	protected _this = this
+	public collections
 
 	constructor(public StorageService: StorageService) {
-		this._storageService = StorageService
 		this._db = StorageService._db // Use already created DB
-		this._storageService.collection = '333'
-		// StorageService.collection = '444'
 		this._db.changes({ live: true, since: 'now', include_docs: true})
 				.on('change', (change, changeInstance) => this.onDatabaseChange(change, changeInstance, this))
+		// return this.getAll()
 	}
 
 	onDatabaseChange(change, changeInstance, __this) {
 		console.log('==============')
 		console.log(change)
 		console.log('==============')
-		__this._storageService.collection = '222'
 	}
 
 	// Prepare document before operations.
@@ -30,29 +27,71 @@ abstract class aDB {
 	// @params operation - {String} - type of CRUD operation.
 	//		possible values: 'add', 'get', 'update', 'delete'
 	// @params doc - {Object} - JSON object of document
-	// abstract _prepareDoc(operation: String, doc: Object): Object
 
-	add(doc) {
+	public save(doc) {
+		if (doc._id) {
+			return this._update(this._prepareDoc('update', doc))
+		} else {
+			return this._add(this._prepareDoc('add', doc))
+		}
+	}
+
+	public delete(doc) {
+		return this._delete(doc)
+	}
+
+	protected abstract _prepareDoc(operation: String, doc: Object): Object
+
+	protected _add(doc) {
 			return this._db.put(doc)
+				.then(() => {
+					this.collections.push(doc)
+					return doc
+				})
 	}
 
 	get(docId) {
 		return this._db.get(docId, { include_docs: true })
 	}
 
-	update(doc) {
+	protected _update(doc) {
 			return this._db.put(doc)
 	}
 
-	delete(doc) {
-		return this._db.remove(doc)
+	protected _delete(doc) {
+		console.log('DELETE IT')
+		return this._db.remove(doc._id)
+			.then(() => {
+				this.collections.splice(this.collections.findIndex((el) => el._id === doc._id), 1)
+				return doc
+			})
+			.catch( (err, arg2) => {
+				console.log(err, arg2)
+			})
 	}
 
-	upsert(doc) {
-		return this._db.upsert(doc)
-	}
-
+	// Get All docs and save it to storage in memory: StorageService.models.${_model_name_}.collections - Array<Object>
 	getAll() {
+		return this._getAll()
+			.then(results => {
+					// Each row has a .doc object and we just want to send an
+					// array of collections objects back to the calling controller,
+					// so let's map the array to contain just the .doc objects.
+
+					this.collections = results.docs.map(row => {
+							// Dates are not automatically converted from a string.
+							// row.doc.Date = new Date(row.doc.Date);
+							return row
+					});
+
+					// Listen for changes on the database.
+					// this._db.changes({ live: true, since: 'now', include_docs: true})
+					// 		.on('change', this.onDatabaseChange)
+					return this.collections
+			})
+	}
+
+	private _getAll() {
 		return this._db.find({selector: {type: this._model_name}})
 	}
 

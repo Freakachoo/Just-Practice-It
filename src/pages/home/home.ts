@@ -17,19 +17,26 @@ export class HomePage {
         private zone: NgZone,
         public modalCtrl: ModalController) {
 
+        this.StorageService.initDB('just_practice_it')
+        .then(() => {
+          console.log('++++')
+          console.log(this.StorageService.models.Dairy.collections)
+          console.log(this.StorageService.models.Dairy)
+          console.log('++++')
+          this.dairy = this.StorageService.models.Dairy.collections
+        })
     }
 
     ionViewDidLoad() {
-        this.platform.ready().then(() => {
-            this.StorageService.initDB('just_practice_it')
-            this.col = this.StorageService.collection
-            this.StorageService.models.Dairy.getAll()
-              .then(data => {
-                    this.zone.run(() => {
-                        this.dairy = data.docs
-                    })
-                })
-                .catch(console.error.bind(console))
+
+      this.platform.ready().then(() => {
+            // this.StorageService.models.Dairy.getAll()
+            //   .then(data => {
+            //         this.zone.run(() => {
+            //             this.dairy = data.docs
+            //         })
+            //     })
+            //     .catch(console.error.bind(console))
         });
     }
 
@@ -37,7 +44,6 @@ export class HomePage {
         let modal = this.modalCtrl.create(DetailsPage, { dairyEntry: dairyEntry })
         modal.present()
         modal.onDidDismiss(() => {
-          console.log(this.StorageService.collection)
           // this.col = this.StorageService.collection
           // this.col = '22222'
         })
