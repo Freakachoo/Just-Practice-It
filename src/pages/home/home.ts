@@ -17,12 +17,7 @@ export class HomePage {
         private zone: NgZone,
         public modalCtrl: ModalController) {
 
-        this.StorageService.initDB('just_practice_it')
-        .then(() => {
-          console.log('++++')
-          console.log(this.StorageService.models.Dairy.collections)
-          console.log(this.StorageService.models.Dairy)
-          console.log('++++')
+        this.StorageService.initDB('just_practice_it', () => {
           this.dairy = this.StorageService.models.Dairy.collections
         })
     }

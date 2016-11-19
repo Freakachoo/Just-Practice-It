@@ -6,12 +6,13 @@ import {StorageService} from '../../app/services/storage.service'
 abstract class aDB {
 	protected _db
 	protected _model_name
-	public collections
+	public collections = []
 
 	constructor(public StorageService: StorageService) {
 		this._db = StorageService._db // Use already created DB
-		this._db.changes({ live: true, since: 'now', include_docs: true})
-				.on('change', (change, changeInstance) => this.onDatabaseChange(change, changeInstance, this))
+		this._db.addCollection(this.getModelName())
+		// this._db.changes({ live: true, since: 'now', include_docs: true})
+		// 		.on('change', (change, changeInstance) => this.onDatabaseChange(change, changeInstance, this))
 		// return this.getAll()
 	}
 
@@ -29,18 +30,19 @@ abstract class aDB {
 	// @params doc - {Object} - JSON object of document
 
 	public save(doc) {
-		if (doc._id) {
-			return this._update(this._prepareDoc('update', doc))
-		} else {
-			return this._add(this._prepareDoc('add', doc))
-		}
+		return this._upsert(this._prepareDoc( (doc._id ? 'update' : 'add') , doc))
 	}
 
 	public delete(doc) {
-		return this._delete(doc)
+		return this._delete(doc).then(() => {
+			this.collections.splice(this.collections.findIndex((el) => el._id === doc._id), 1)
+			return doc
+		})
 	}
 
 	protected abstract _prepareDoc(operation: String, doc: Object): Object
+
+	protected abstract getModelName() : String
 
 	protected _add(doc) {
 			return this._db.put(doc)
@@ -55,30 +57,41 @@ abstract class aDB {
 	}
 
 	protected _update(doc) {
-			return this._db.put(doc)
+		return this._db.put(doc)
+	}
+
+	protected _upsert(doc) {
+		return new Promise( (resolve, reject) =>  {
+			this._db[this._model_name].upsert(doc, () => {
+				let ind = this.collections.findIndex((el) => el._id === doc._id)
+				if (ind > -1 ) {
+					this.collections[ind] = doc
+				} else {
+					this.collections.push(doc)
+				}
+				resolve(doc)
+			})
+		})
 	}
 
 	protected _delete(doc) {
-		console.log('DELETE IT')
-		return this._db.remove(doc._id)
-			.then(() => {
-				this.collections.splice(this.collections.findIndex((el) => el._id === doc._id), 1)
-				return doc
+		return new Promise( (resolve, reject) => {
+			this._db[this._model_name].remove(doc._id, (err) => {
+				if (err) {console.log(err)}
+				resolve()
 			})
-			.catch( (err, arg2) => {
-				console.log(err, arg2)
-			})
+		})
 	}
 
 	// Get All docs and save it to storage in memory: StorageService.models.${_model_name_}.collections - Array<Object>
 	getAll() {
 		return this._getAll()
-			.then(results => {
+			.then( (results: Array<Object>) => {
 					// Each row has a .doc object and we just want to send an
 					// array of collections objects back to the calling controller,
 					// so let's map the array to contain just the .doc objects.
 
-					this.collections = results.docs.map(row => {
+					this.collections = results.map(row => {
 							// Dates are not automatically converted from a string.
 							// row.doc.Date = new Date(row.doc.Date);
 							return row
@@ -92,37 +105,13 @@ abstract class aDB {
 	}
 
 	private _getAll() {
-		return this._db.find({selector: {type: this._model_name}})
+		return new Promise( (resolve, reject) => {
+			this._db[this._model_name].find({type: this._model_name})
+			.fetch((result) => {
+				resolve(result)
+			})
+		})
 	}
-
-	// getAll(collection_type) {
-	//
-	// 		if (!this._birthdays) {
-	// 				return this._db.allDocs({ include_docs: true})
-	// 						.then(docs => {
-	//
-	// 								// Each row has a .doc object and we just want to send an
-	// 								// array of birthday objects back to the calling controller,
-	// 								// so let's map the array to contain just the .doc objects.
-	//
-	// 								this._birthdays = docs.rows.map(row => {
-	// 										// Dates are not automatically converted from a string.
-	// 										row.doc.Date = new Date(row.doc.Date);
-	// 										return row.doc;
-	// 								});
-	//
-	// 								// Listen for changes on the database.
-	// 								this._db.changes({ live: true, since: 'now', include_docs: true})
-	// 										.on('change', this.onDatabaseChange);
-	//
-	// 								return this._birthdays;
-	// 						});
-	// 		} else {
-	// 				// Return cached data as a promise
-	// 				return Promise.resolve(this._birthdays);
-	// 		}
-	// }
-
 
 	// private onDatabaseChange = (change) => {
 	// 		var index = this.findIndex(this._birthdays, change.id);

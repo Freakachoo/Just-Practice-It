@@ -14,7 +14,12 @@ interface DairyCollection {
 @Injectable()
 export default class Dairy extends aDB {
 
-	protected _model_name = 'Dairy'
+	protected _model_name
+
+	protected getModelName() {
+		this._model_name = 'Dairy'
+		return this._model_name
+	}
 
 	protected _prepareDoc(operation: String, doc: DairyCollection) {
 		switch(operation) {
