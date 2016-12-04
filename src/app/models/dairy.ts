@@ -9,6 +9,9 @@ interface DairyCollection {
 	content: string
 	tags: Array<string>
 	date: string
+
+	// :TODO add field:
+	// location - coordinates of the place, where was added entity
 }
 
 @Injectable()

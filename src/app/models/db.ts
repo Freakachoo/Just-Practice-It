@@ -22,12 +22,6 @@ abstract class aDB {
 		console.log('==============')
 	}
 
-	// Prepare document before operations.
-	// Add type of item, prepare _id, etc...
-	//
-	// @params operation - {String} - type of CRUD operation.
-	//		possible values: 'add', 'get', 'update', 'delete'
-	// @params doc - {Object} - JSON object of document
 
 	public save(doc) {
 		return this._upsert(this._prepareDoc( (doc._id ? 'update' : 'add') , doc))
@@ -40,8 +34,57 @@ abstract class aDB {
 		})
 	}
 
+	// Get one document by Id
+	public get(docId) {
+		return this._db.get(docId, { include_docs: true })
+	}
+
+	// Get All docs and save it to storage in memory: StorageService.models.${_model_name_}.collections - Array<Object>
+	public getAll() {
+		return this._getAll()
+			.then( (results: Array<Object>) => {
+					// Each row has a .doc object and we just want to send an
+					// array of collections objects back to the calling controller,
+					// so let's map the array to contain just the .doc objects.
+
+					this.collections = results.map(row => {
+							// Dates are not automatically converted from a string.
+							// row.doc.Date = new Date(row.doc.Date);
+							return row
+					});
+
+					// Listen for changes on the database.
+					// this._db.changes({ live: true, since: 'now', include_docs: true})
+					// 		.on('change', this.onDatabaseChange)
+					return this.collections
+			})
+	}
+
+	// @params Date - {Number} timestamp
+	public getByDate(Date) {
+		// TODO: complete construction of key - add date there 
+		return this._getAll({_id: {$regex: `${this._model_name.toLowerCase()}`}})
+	}
+
+	private _getAll(filter: any = {}) {
+		filter.type = this._model_name
+		return new Promise( (resolve, reject) => {
+			this._db[this._model_name].find(filter)
+			.fetch((result) => {
+				resolve(result)
+			})
+		})
+	}
+
+	// Prepare document before operations.
+	// Add type of item, prepare _id, etc...
+	//
+	// @params operation - {String} - type of CRUD operation.
+	//		possible values: 'add', 'get', 'update', 'delete'
+	// @params doc - {Object} - JSON object of document
 	protected abstract _prepareDoc(operation: String, doc: Object): Object
 
+	// Getter of model name. this._model_name
 	protected abstract getModelName() : String
 
 	protected _add(doc) {
@@ -50,10 +93,6 @@ abstract class aDB {
 					this.collections.push(doc)
 					return doc
 				})
-	}
-
-	get(docId) {
-		return this._db.get(docId, { include_docs: true })
 	}
 
 	protected _update(doc) {
@@ -79,36 +118,6 @@ abstract class aDB {
 			this._db[this._model_name].remove(doc._id, (err) => {
 				if (err) {console.log(err)}
 				resolve()
-			})
-		})
-	}
-
-	// Get All docs and save it to storage in memory: StorageService.models.${_model_name_}.collections - Array<Object>
-	getAll() {
-		return this._getAll()
-			.then( (results: Array<Object>) => {
-					// Each row has a .doc object and we just want to send an
-					// array of collections objects back to the calling controller,
-					// so let's map the array to contain just the .doc objects.
-
-					this.collections = results.map(row => {
-							// Dates are not automatically converted from a string.
-							// row.doc.Date = new Date(row.doc.Date);
-							return row
-					});
-
-					// Listen for changes on the database.
-					// this._db.changes({ live: true, since: 'now', include_docs: true})
-					// 		.on('change', this.onDatabaseChange)
-					return this.collections
-			})
-	}
-
-	private _getAll() {
-		return new Promise( (resolve, reject) => {
-			this._db[this._model_name].find({type: this._model_name})
-			.fetch((result) => {
-				resolve(result)
 			})
 		})
 	}

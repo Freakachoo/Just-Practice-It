@@ -4,6 +4,7 @@ import { MyApp } from './app.component'
 import { HomePage } from '../pages/home/home'
 import { DetailsPage } from '../pages/details/details'
 import { StorageService } from './services/storage.service'
+import { RemoteStorageService } from './services/remoteStorage.service'
 import { TagInputModule } from 'ng2-tag-input'
 
 @NgModule({
@@ -22,6 +23,6 @@ import { TagInputModule } from 'ng2-tag-input'
     HomePage,
     DetailsPage
   ],
-  providers: [StorageService]
+  providers: [StorageService, RemoteStorageService]
 })
 export class AppModule {}
